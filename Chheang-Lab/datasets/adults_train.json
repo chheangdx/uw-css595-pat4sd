@@ -1,0 +1,50 @@
+{
+    "columns": {
+        "age": {
+            "sdtype": "numerical"
+        },
+        "type_employer": {
+            "sdtype": "categorical"
+        },
+        "fnlwgt": {
+            "sdtype": "numerical"
+        },
+        "education": {
+            "sdtype": "categorical"
+        },
+        "education_num": {
+            "sdtype": "numerical"
+        },
+        "marital": {
+            "sdtype": "categorical"
+        },
+        "occupation": {
+            "sdtype": "categorical"
+        },
+        "relationship": {
+            "sdtype": "categorical"
+        },
+        "race": {
+            "sdtype": "categorical"
+        },
+        "sex": {
+            "sdtype": "categorical"
+        },
+        "capital_gain": {
+            "sdtype": "numerical"
+        },
+        "capital_loss": {
+            "sdtype": "numerical"
+        },
+        "hr_per_week": {
+            "sdtype": "numerical"
+        },
+        "country": {
+            "sdtype": "categorical"
+        },
+        "income": {
+            "sdtype": "categorical"
+        }
+    },
+    "METADATA_SPEC_VERSION": "SINGLE_TABLE_V1"
+}
