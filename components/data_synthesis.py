@@ -21,9 +21,24 @@ from sdv.metadata import SingleTableMetadata
 # +++++++++++++++
 from snsynth import Synthesizer
 
+#PREPROCESSING METHODS
+####
 
+def prep_metadata(data):
+    metadata = SingleTableMetadata()
+    metadata.detect_from_dataframe(data)
+    return metadata
+def prep_bin_data(data, columns=[], bin_size=50):
+    new_data = data
+    if(bin_size > 0):
+        for col in columns:
+            bins = pd.cut(data[col], bins=bin_size, labels=list(range(1,bin_size+1)))
+            new_data[col] = bins
+    return new_data
 
-class DataSynthesis:
+#DATA SYNTHESIS CLASS
+####
+class DataSynthesis():
     data_synthesis_approaches = ['ctgan', 'dpctgan']
 
     # metadata for the dataset to be used must be provided
@@ -65,11 +80,13 @@ class DataSynthesis:
             approach: (string) approach for synthesis, see get_approaches for options
         Out: dict with parameter names and default values
     """
-    def get_default_params(approach):
+    def test(self, x):
+        return x
+    def get_default_params(self, approach):
         if approach == 'ctgan':
             return {
                 'sample_size': 1000,
-                'enforce_round': False,
+                'enforce_rounding': False,
                 'epochs': 500,
                 'verbose': True
             }
@@ -95,8 +112,30 @@ class DataSynthesis:
             test_data: (dataframe) (optional) original data that wasnt used for training
         Out: 0, analysis data is printed here.
     """
-    def run_data_analysis(self, train_data, synth_data, test_data=None):
-        return 0
+    def run_data_diagnosis(self, train_data, synth_data, test_data=None):
+        print("=== Quality Report ===")
+        quality_report = evaluate_quality(
+            real_data=train_data,
+            synthetic_data=synth_data,
+            metadata=self.metadata
+        )
+
+        print("=== Diagnostic Report ===")
+        diagnostic_report = run_diagnostic(
+            real_data=train_data,
+            synthetic_data=synth_data,
+            metadata=self.metadata
+        )
+        return
+    def run_column_diagnosis(self, train_data, synth_data, column):
+        fig = get_column_plot(
+            real_data=train_data,
+            synthetic_data=synth_data,
+            column_name=column,
+            metadata=self.metadata
+        )
+        fig.show()
+        return
     
     # ===============
     #
@@ -120,7 +159,7 @@ class DataSynthesis:
             synthesizer.fit(data)
         # TODO: Other methods are tvae, gaussiancopula, copulagan
         synthetic_data = synthesizer.sample(num_rows=params['sample_size'])
-        return 0
+        return synthetic_data
     
     def _run_sn(self, data, approach, parameters):
         params = parameters
@@ -136,6 +175,6 @@ class DataSynthesis:
             verbose = params['verbose']
         )
         synth.fit(data, preprocessor_eps=params['preprocessor_eps'])
-        dataframe_synth = synth.sample(params['sample_size'])
+        synthetic_data = synth.sample(params['sample_size'])
 
-        return 0
+        return synthetic_data
