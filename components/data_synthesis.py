@@ -126,6 +126,9 @@ class DataSynthesis():
             synthetic_data=synth_data,
             metadata=self.metadata
         )
+
+        # TODO: Calculate Utility Scores
+
         return
     def run_column_diagnosis(self, train_data, synth_data, column):
         fig = get_column_plot(
