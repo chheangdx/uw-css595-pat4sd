@@ -88,9 +88,7 @@ class DataSynthesis():
                 'sample_size': 1000,
                 'enforce_rounding': False,
                 'epochs': 500,
-                'verbose': True,
-                'save_synthesizer': False,
-                'save_filepath': ''
+                'verbose': True
             }
         if approach == 'dpctgan':
             return {
@@ -163,8 +161,6 @@ class DataSynthesis():
             )
             synthesizer.fit(data)
         # TODO: Other methods are tvae, gaussiancopula, copulagan
-        if(params['save_synthesizer']):
-            synthesizer.save(filepath=params['save_filepath'])
         synthetic_data = synthesizer.sample(num_rows=params['sample_size'])
         return synthetic_data
     
