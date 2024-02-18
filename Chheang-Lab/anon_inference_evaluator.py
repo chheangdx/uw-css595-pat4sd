@@ -135,6 +135,7 @@ class InferenceEvaluator2:
         # MODIFICATION: added new member variables
         self.guesses = None
         self.targets = None
+        self.distances = None
 
 
     ## MODIFICATION: moved _run_attack into the class
@@ -159,9 +160,10 @@ class InferenceEvaluator2:
 
         else:
             nn = MixedTypeKNeighbors(n_jobs=n_jobs, n_neighbors=1).fit(candidates=syn[aux_cols])
-
-            guesses_idx = nn.kneighbors(queries=targets[aux_cols])
+            ## MODIFICATION: include distances in output
+            distances, guesses_idx = nn.kneighbors(queries=targets[aux_cols], return_distance = True)
             guesses = syn.iloc[guesses_idx.flatten()][secret]
+            self.distances = distances
         ## MODIFICATION: save the guesses to self
         self.guesses = guesses
         self.targets = targets
