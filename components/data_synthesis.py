@@ -1,3 +1,8 @@
+##### PLACE LICENSES HERE #####
+
+import warnings
+warnings.filterwarnings("ignore")
+
 import pandas as pd
 import graphviz
 
