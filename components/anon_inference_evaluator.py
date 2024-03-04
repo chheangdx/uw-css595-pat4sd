@@ -164,9 +164,9 @@ class InferenceEvaluator_Modified:
             distances, guesses_idx = nn.kneighbors(queries=targets[aux_cols], return_distance = True)
             guesses = syn.iloc[guesses_idx.flatten()][secret]
             self.distances = distances
-        ## MODIFICATION: save the guesses to self
-        self.guesses = guesses
-        self.targets = targets
+            ## MODIFICATION: save the guesses to self
+            self.guesses = guesses
+            self.targets = targets
         return evaluate_inference_guesses(guesses=guesses, secrets=targets[secret], regression=regression).sum()
 
     def _attack(self, target: pd.DataFrame, naive: bool, n_jobs: int) -> int:
@@ -196,10 +196,13 @@ class InferenceEvaluator_Modified:
 
         """
         self._n_baseline = self._attack(target=self._ori, naive=True, n_jobs=n_jobs)
-        self._n_success = self._attack(target=self._ori, naive=False, n_jobs=n_jobs)
+        
+        # MODIFICATION: swapped self._n_control and self._n_success below
         self._n_control = (
             None if self._control is None else self._attack(target=self._control, naive=False, n_jobs=n_jobs)
         )
+        self._n_success = self._attack(target=self._ori, naive=False, n_jobs=n_jobs)
+
         
         self._evaluated = True
         return self

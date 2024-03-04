@@ -38,7 +38,7 @@ def prep_bin_data(data, columns=[], bin_size=50):
     if(bin_size > 0):
         for col in columns:
             bins = pd.cut(data[col], bins=bin_size, labels=list(range(1,bin_size+1)))
-            new_data[col] = bins
+            new_data[col] = pd.to_numeric(bins)
     return new_data
 
 #DATA SYNTHESIS CLASS
