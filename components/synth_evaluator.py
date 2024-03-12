@@ -44,10 +44,12 @@ class SynthEvaluator():
         Desc: 
         Out: 
     """
-    def run_defense(self):
-        #_attack_accuracy
+    def run_defense(self, attack_results):
+        score = {}
+        score['accuracy'] = self._attack_accuracy(attack_results)
+        #_gda_pairwise_error
         #_gda_defense
-        return
+        return score
 
     """ 
         Method: 
@@ -107,19 +109,261 @@ class SynthEvaluator():
     #
     # ===============
 
-    def _attack_accuracy(self):
-        #anon version
-
-        #domias version
-
+    def _attack_accuracy(self, attack_results):
+        confidence_level = 0.95
+        accuracy = {}
+        accuracy['anon_inference'] = {}
+        accuracy['domias'] = {}
+        for col_result in attack_results['anon_inference'].values():
+            #anonymeter version of accuracy calculation
+            n_attacks = col_result['results'].n_attacks
+            n_success = col_result['results'].n_success
+            z = norm.ppf(0.5 * (1.0 + confidence_level))
+            z_squared = z * z
+            n_success_var = n_success * (n_attacks - n_success) / n_attacks
+            denominator = n_attacks + z_squared
+            rate1 = (n_success + 0.5 * z_squared) / denominator
+            error1 = (z / denominator) * sqrt(n_success_var + 0.25 * z_squared)
+            #domias version of accuracy calculation
+            rate2  = accuracy_score(col_result['y_true'], col_result['y_pred'])
+            accuracy['anon_inference'][col_result['col']] = {
+                'rate1': rate1,
+                'error1': error1,
+                'rate2': rate2
+            }
+            # TODO add control and baseline attack results
+            
+        #then do it for DOMIAS results
+        #anonymeter version of accuracy calculation
+        n_attacks = attack_results['domias']['n_attacks']
+        n_success = attack_results['domias']['n_success']
+        z = norm.ppf(0.5 * (1.0 + confidence_level))
+        z_squared = z * z
+        n_success_var = n_success * (n_attacks - n_success) / n_attacks
+        denominator = n_attacks + z_squared
+        rate1 = (n_success + 0.5 * z_squared) / denominator
+        error1 = (z / denominator) * sqrt(n_success_var + 0.25 * z_squared)
+        #domias version of accuracy calculation
+        rate2  = accuracy_score(attack_results['domias']['y_true'], attack_results['domias']['y_pred'])
+        accuracy['domias'] = {
+            'rate1': rate1,
+            'error1': error1,
+            'rate2': rate2
+        }
         #rocauc
+        # AUCROC as defined by DOMIAS
+        # use sklearn's roc_auc_score function, which uses y_true and y_scores
+        # for Anonymeter, our y_scores would be the distance measured
+        for col_result in attack_results['anon_inference'].values():
+            try:
+                rocauc = roc_auc_score(col_result['y_true'], col_result['distances'])
+                accuracy['anon_inference'][col_result['col']]['rocauc'] = rocauc
+            except ValueError:
+                print(col_result['col'], ' could not calculate ROCAUC due to single class in y_true')
+                pass
+        # aucroc also is measured on continuous datasets, so this may not fit
+        domias_rocauc = roc_auc_score(attack_results['domias']['y_true'], attack_results['domias']['mia_scores'])
+        accuracy['domias']['rocauc'] = rocauc
+        return accuracy
 
-        #GDA version (modified from Utility score)
+    def _gda_pairwise_error(self):
+        # # after using DOMIAS metrics, we can also use the Accuracy algorithm from GDA's utility score to further measure attack accuracy
+        # # 1. Create Error Lists:
+        # #     ** skip all Anon where 0 before computing, not needed here because anon is all 1
+        # #     Absolute Error: Absolute( Anon - Raw)
+        # #     Simple Relative Error: Raw / Anon
+        # #     Relative Error: Absolute(Anon - Raw) / Max (Anon, Raw)
+        # # 2. Convert Error Lists into 5 metrics each: Min, Max, Avg, Stddev, Compute
+        # print("::Anonymeter Results::")
+        # gda_acc = {}
+        # for secret in columns:
+        #     absErrorList = []
+        #     simpleRelErrorList = []
+        #     relErrorList = []
 
+        #     y_true = anon_y_true[secret]
+        #     y_pred = anon_y_pred[secret]
+        #     for i in range(0, len(y_true)):
+        #         absErrorList.append(abs(y_pred[i]-y_true[i]))
+        #         simpleRelErrorList.append(y_true[i]/y_pred[i])
+        #         relErrorList.append(abs(y_pred[i]-y_true[i]) / max(y_pred[i], y_true[i]))
+        #     mins = [min(absErrorList), min(simpleRelErrorList), min(relErrorList)]
+        #     maxs = [max(absErrorList), max(simpleRelErrorList), max(relErrorList)]
+        #     avgs = [mean(absErrorList), mean(simpleRelErrorList), mean(relErrorList)]
+        #     stdevs = [
+        #         round(stdev(absErrorList), 5), 
+        #         round(stdev(simpleRelErrorList), 5), 
+        #         round(stdev(relErrorList), 5)
+        #     ]
+            
+        #     mse_result = []
+        #     for errorList in [absErrorList, simpleRelErrorList, relErrorList]:
+        #         mse = 0
+        #         for item in errorList:
+        #             mse += item * item
+        #         if len(errorList) > 0:
+        #             mse = mse/len(errorList)
+        #         mse_result.append(mse)
+            
+        #     gda_acc[secret] = {}
+            
+        #     #add our accuracy score from DOMIAS
+        #     acc  = accuracy_score(y_true, y_pred)
+        #     gda_acc[secret]['acc'] = acc
+            
+        #     #then add our GDA calculated accuracy score
+        #     gda_acc[secret]['mins'] = mins
+        #     gda_acc[secret]['maxs'] = maxs
+        #     gda_acc[secret]['avgs'] = avgs
+        #     gda_acc[secret]['stdevs'] = stdevs
+        #     gda_acc[secret]['mse'] = mse_result
+        #     print(str(secret).ljust(15, ' '), " --> ", gda_acc[secret])
+
+        # print("\n\n::DOMIAS Results::")
+        # absErrorList = []
+        # simpleRelErrorList = []
+        # relErrorList = []
+
+        # y_true = domias_y_true
+        # y_pred = domias_y_pred
+        # for i in range(0, len(y_true)):
+        #     #skip 0s
+        #     if(y_pred[i] == 0):
+        #         continue
+        #     absErrorList.append(abs(y_pred[i]-y_true[i]))
+        #     simpleRelErrorList.append(y_true[i]/y_pred[i])
+        #     relErrorList.append(abs(y_pred[i]-y_true[i]) / max(y_pred[i], y_true[i]))
+        # mins = [min(absErrorList), min(simpleRelErrorList), min(relErrorList)]
+        # maxs = [max(absErrorList), max(simpleRelErrorList), max(relErrorList)]
+        # avgs = [mean(absErrorList), mean(simpleRelErrorList), mean(relErrorList)]
+        # stdevs = [
+        #     round(stdev(absErrorList), 5), 
+        #     round(stdev(simpleRelErrorList), 5), 
+        #     round(stdev(relErrorList), 5)
+        # ]
+        # mse_result = []
+        # for errorList in [absErrorList, simpleRelErrorList, relErrorList]:
+        #     mse = 0
+        #     for item in errorList:
+        #         mse += item * item
+        #     if len(errorList) > 0:
+        #         mse = mse/len(errorList)
+        #     mse_result.append(mse)
+
+        # gda_acc['domias'] = {}
+
+        # # add our accuracy score from DOMIAS
+        # gda_acc['domias']['acc'] = round(domias_acc, 5)
+        # # add our rocauc score from DOMIAS
+        # gda_acc['domias']['rocauc'] = round(domias_rocauc, 5)
+
+        # #then add our GDA calculated accuracy score
+        # gda_acc['domias']['mins'] = mins
+        # gda_acc['domias']['maxs'] = maxs
+        # gda_acc['domias']['avgs'] = avgs
+        # gda_acc['domias']['stdevs'] = stdevs
+        # gda_acc['domias']['mse'] = mse_result
+        # print(gda_acc['domias'])
         return
-
     def _gda_defense(self):
-        
+        # # GDA Scores - Defense
+        # # unable to do: requires guesses and confidence of each guess
+        # # Anonymeter can provide guesses if we rewrite the attack code ourselves, but we won't get confidence
+        # # DOMIAS can provide guesses and something similar to confidence (MIA Scores), but it is also different because the "guesses" is all the original data
+
+        # # Confidence Improvement
+        # # For Anonymeter attack: CI = (C-S)/(1-S) where C=n_success/n_attacks and S = n_baseline/n_attacks
+        # # For DOMIAS attack: C=n_success/n_attacks and S=count(True)/total? Or maybe we use Anonymeter S as the baseline confidence
+
+        # C_anon = anon_n_success/anon_n_attacks
+        # C_domias = domias_n_success/domias_n_attacks
+
+        # S_anon = anon_n_baseline/anon_n_attacks
+        # # S_domias = sum(domias_y_success)/(len(domias_y_success)+1)
+
+        # CI_anon = (C_anon-S_anon)/(1-S_anon)
+        # CI_domias = (C_domias-S_anon)/(1-S_anon)
+
+        # print("CI Anon: ", CI_anon)
+        # print("CI Domias: ", CI_domias)
+
+        # # Defense & Confidence are basically the same in our interpretation
+        # # Using defense gride, getInterpolatedValue(CI, CP, defenseGrid)
+        # # Claim made is most likely how many claims met the confidence threshold, which we do not have
+        # # CP is defined as the ratio of attempts to claims
+        # # CP is calculated as claim made / claim trials, but we can try success/total
+
+        # CP_anon = anon_n_success/anon_n_attacks
+        # CP_domias = sum(domias_y_pred)/(len(domias_y_pred)+1)
+
+        # print("Claim Probability Anon: ", CP_anon)
+        # print("Claim Probability Domias: ", CP_domias)
+
+        # defenseGrid1 = [
+        #     (1, 1, 0), (1, .01, .1), (1, .001, .3), (1, .0001, .7), (1, .00001, 1),
+        #     (.95, 1, .1), (.95, .01, .3), (.95, .001, .7), (.95, .0001, .8), (.95, .00001, 1),
+        #     (.90, 1, .3), (.90, .01, .6), (.90, .001, .8), (.90, .0001, .9), (.90, .00001, 1),
+        #     (.75, 1, .7), (.75, .01, .9), (.75, .001, .95), (.75, .0001, 1), (.75, .00001, 1),
+        #     (.50, 1, .95), (.50, .01, .95), (.50, .001, 1), (.50, .0001, 1), (.5, .00001, 1),
+        #     (0, 1, 1), (0, .01, 1), (0, .001, 1), (0, .0001, 1), (0, .00001, 1)
+        # ]
+
+        # def getInterpolatedValue(val0, val1, scoreGrid):
+        #     """Compute interpolated value from grid of mapping tuples
+
+        #     This routine takes as input a list of tuples ("grid") of the form
+        #     `(val0,val1,score)`. It maps (val0,val1) values to a corresponding
+        #     score. It returns a score that is interpolated between the
+        #     scores in the grid. An example of such a grid can be found in
+        #     gdaScore.py, called `_defenseGrid1`. Note that val0 and val1 must
+        #     go in descending order as shown. Input values that are above the
+        #     highest val0 and val1 values will take the score of the first
+        #     entry. Input values that are below the lowest val0 and val1 will
+        #     take the score of the last entry.
+        #     """
+        #     scoreAbove = -1
+        #     scoreBelow = -1
+        #     for tup in scoreGrid:
+        #         tup0 = tup[0]
+        #         tup1 = tup[1]
+        #         score = tup[2]
+        #         if val0 <= tup0 and val1 <= tup1:
+        #             tup0Above = tup0
+        #             tup1Above = tup1
+        #             scoreAbove = score
+        #     for tup in reversed(scoreGrid):
+        #         tup0 = tup[0]
+        #         tup1 = tup[1]
+        #         score = tup[2]
+        #         if val0 >= tup0 and val1 >= tup1:
+        #             tup0Below = tup0
+        #             tup1Below = tup1
+        #             scoreBelow = score
+        #     if scoreAbove == -1 and scoreBelow == -1:
+        #         return None
+        #     if scoreAbove == -1:
+        #         return scoreBelow
+        #     if scoreBelow == -1:
+        #         return scoreAbove
+        #     if scoreAbove == scoreBelow:
+        #         return scoreAbove
+        #     # Interpolate by treating as right triangle with tup0 as y and
+        #     # tup1 as x
+        #     yLegFull = tup0Above - tup0Below
+        #     xLegFull = tup1Above - tup1Below
+        #     hypoFull = math.sqrt((xLegFull ** 2) + (yLegFull ** 2))
+        #     yLegPart = val0 - tup0Below
+        #     xLegPart = val1 - tup1Below
+        #     hypoPart = math.sqrt((xLegPart ** 2) + (yLegPart ** 2))
+        #     frac = hypoPart / hypoFull
+        #     interpScore = scoreBelow - (frac * (scoreBelow - scoreAbove))
+        #     return interpScore
+
+        # defense_anon = getInterpolatedValue(CI_anon, CP_anon, defenseGrid1)
+        # defense_domias = getInterpolatedValue(CI_domias, CP_domias, defenseGrid1)
+
+        # print("Defense Anon: ", defense_anon)
+        # print("Defense Domias: ", defense_domias)        
         return
 
     def _marginal_distribution_similarity(self, original_data, synth_data):

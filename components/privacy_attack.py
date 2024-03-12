@@ -123,7 +123,7 @@ class PrivacyAttack():
         control_data: Optional[pd.DataFrame] = None,
         n_attacks: int = 500
     ):
-        eval_results = []
+        eval_results = {}
         for secret in original_data.columns: 
             aux_cols = [col for col in original_data.columns if col != secret]
             # the attack algorithm uses the synthetic data to model the k-neighbors and then aux columns to guess secret column
@@ -138,6 +138,7 @@ class PrivacyAttack():
 
             # after modification of InferenceEvaluator to save the Guesses
             results = {
+                # https://github.com/statice/anonymeter/blob/3a7408156b572de67a01277ce50bf485bd7c9529/src/anonymeter/stats/confidence.py#L168
                 'col': secret,
                 'results': evaluator.results(),
                 'guesses': evaluator.guesses.to_list(), 
@@ -156,7 +157,7 @@ class PrivacyAttack():
             results['y_true'] = y_true
             results['y_pred'] = y_pred
 
-            eval_results.append(results)
+            eval_results[secret] = results
 
         return eval_results
 
