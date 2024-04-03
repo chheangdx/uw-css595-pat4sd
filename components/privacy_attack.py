@@ -25,7 +25,7 @@ pykeops.test_torch_bindings()
 #
 #
 
-from anon_inference_evaluator import InferenceEvaluator_Modified
+from .anon_inference_evaluator import InferenceEvaluator_Modified
 
 # +++++++++++++++
 # DOMIAS is a membership inference attack that focuses on overfitted distributions
