@@ -91,18 +91,24 @@ class PrivacyAttack():
         # TODO: validate parameters
 
         # run anonymeter attack
-        anon_results = self._anon_inference(
-            original_data = original_data,
-            synth_data = synth_data,
-            control_data = control_data,
-            n_attacks = params['anon_inf_attacks']
-        )
+        # print("Running Anon Attack")
+        # anon_results = self._anon_inference(
+        #     original_data = original_data,
+        #     synth_data = synth_data,
+        #     control_data = control_data,
+        #     n_attacks = params['anon_inf_attacks']
+        # )
         # run domias attack
-        domias_results = self._domias_overfit(
+        print("Running Domias Attack")
+        domias_perf = self._domias_overfit(
             params = params,
             original_data = original_data,
             synth_data = synth_data,
             control_data = control_data
+        )
+        domias_results = self._convert_domias_perf_to_results(
+            perf = domias_perf,
+            params = params
         )
         # combine results and return
         return {
@@ -135,7 +141,7 @@ class PrivacyAttack():
                                         n_attacks=n_attacks)
             evaluator.evaluate(n_jobs=-2)
             
-
+            print(secret," - Attack Completed, Processing Results")
             # after modification of InferenceEvaluator to save the Guesses
             results = {
                 # https://github.com/statice/anonymeter/blob/3a7408156b572de67a01277ce50bf485bd7c9529/src/anonymeter/stats/confidence.py#L168
@@ -198,11 +204,15 @@ class PrivacyAttack():
                 datasets_to_convert = [original_df, synth_data],
                 columns = cat_columns
             )
+            del original_df
+            del synth_df
             original_df = transformed_dfs[0]
             synth_df = transformed_dfs[1]
 
         dataset = original_df.to_numpy()
+        del original_df
         generator = self._get_generator(synth_df)
+        print("Attack Parameters Process, Attacking")
         perf = evaluate_performance(
             generator,
             dataset,
@@ -212,6 +222,10 @@ class PrivacyAttack():
             synthetic_sizes=[params['domias_synthetic_sizes']],
             density_estimator=params['domias_density_estimator'],
         )
+        print("Attack Completed, Processing Results")
+        return perf
+    
+    def _convert_domias_perf_to_results(perf, params):
         results = perf[params['domias_synthetic_sizes']]['data']
         y_true = results['Ytest']
         mia_scores = perf[params['domias_synthetic_sizes']]['MIA_scores']['domias']
