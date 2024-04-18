@@ -405,10 +405,21 @@ class SynthEvaluator():
 
             # now that we have our probability distributions, we use scipy's Jensen-Shannon distance and **2 to get divergence
             # https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html
-            mds_scores[col] = jensenshannon(prob_p, prob_q) ** 2
+            score = {
+                "mds": 1-(jensenshannon(prob_p, prob_q) ** 2),
+                "kstest": False
+            }
+            mds_scores[col] = score
+            #jensenshannon measures dissimilarity so we do 1-js
         #kst
         for col in numerical_cols:
-            mds_scores[col] = kstest(original_data[col], synth_data[col])
+            kstest_result = kstest(original_data[col], synth_data[col])
+            score = {
+                "mds": kstest_result[0],
+                "kstest": True,
+                "kstest_result": kstest_result
+            }
+            mds_scores[col] = score
         return mds_scores
 
     def _gda_coverage(self, original_data, synth_data):
@@ -432,7 +443,8 @@ class SynthEvaluator():
                 # print(col, " :TEST: ", metadata.columns[col]['sdtype'])
                 entry = {}
                 entry['column'] = col
-                entry['coverage'] = synth_data[col].count()/original_data[col].count()
+                entry['coverage'] = len(set(synth_data[col]))/len(set(original_data[col]))
+                # print(col, " - ", len(set(synth_data[col])), " / ", len(set(original_data[col])))
                 coverage_scores[col] = entry
                 continue
 

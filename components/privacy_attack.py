@@ -91,13 +91,13 @@ class PrivacyAttack():
         # TODO: validate parameters
 
         # run anonymeter attack
-        # print("Running Anon Attack")
-        # anon_results = self._anon_inference(
-        #     original_data = original_data,
-        #     synth_data = synth_data,
-        #     control_data = control_data,
-        #     n_attacks = params['anon_inf_attacks']
-        # )
+        print("Running Anon Attack")
+        anon_results = self._anon_inference(
+            original_data = original_data,
+            synth_data = synth_data,
+            control_data = control_data,
+            n_attacks = params['anon_inf_attacks']
+        )
         # run domias attack
         print("Running Domias Attack")
         domias_perf = self._domias_overfit(
@@ -225,7 +225,11 @@ class PrivacyAttack():
         print("Attack Completed, Processing Results")
         return perf
     
-    def _convert_domias_perf_to_results(perf, params):
+    def _convert_domias_perf_to_results(
+        self, 
+        perf, 
+        params
+    ):
         results = perf[params['domias_synthetic_sizes']]['data']
         y_true = results['Ytest']
         mia_scores = perf[params['domias_synthetic_sizes']]['MIA_scores']['domias']
