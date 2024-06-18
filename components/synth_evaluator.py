@@ -68,21 +68,32 @@ class SynthEvaluator():
         return utility
 
     def run_data_diagnosis(self, original_data, synth_data):
-        print("=== Quality Report ===")
+        # print("=== Quality Report ===")
         quality_report = evaluate_quality(
             real_data=original_data,
             synthetic_data=synth_data,
-            metadata=self.metadata
+            metadata=self.metadata,
+            verbose = False
         )
 
-        print("=== Diagnostic Report ===")
+        # print("=== Diagnostic Report ===")
         diagnostic_report = run_diagnostic(
             real_data=original_data,
             synthetic_data=synth_data,
-            metadata=self.metadata
+            metadata=self.metadata,
+            verbose = False
         )
 
-        return
+        scores = {
+            'validity': diagnostic_report.get_properties()['Score'][0],
+            'structure': diagnostic_report.get_properties()['Score'][1],
+            'diag_score': diagnostic_report.get_score(),
+            'shapes': quality_report.get_properties()['Score'][0],
+            'pair_trends': quality_report.get_properties()['Score'][1],
+            'quality_score': quality_report.get_score()
+        }
+
+        return scores
 
     def run_column_diagnosis(self, original_data, synth_data, column):
         fig = get_column_plot(
@@ -369,8 +380,16 @@ class SynthEvaluator():
         defense_score = {}
         defense_score['anon_inference'] = {}
         for col in attack_results['anon_inference']:
-            defense_score['anon_inference'][col] = getInterpolatedValue(anon_CICP[col]['ci'], anon_CICP[col]['cp'], defenseGrid1)
-        defense_score['domias'] = getInterpolatedValue(CI_domias, CP_domias, defenseGrid1)
+            defense_score['anon_inference'][col] = {
+                'defense': getInterpolatedValue(anon_CICP[col]['ci'], anon_CICP[col]['cp'], defenseGrid1),
+                'ci': anon_CICP[col]['ci'],
+                'cp': anon_CICP[col]['cp']
+            }
+        defense_score['domias'] = {
+            'defense': getInterpolatedValue(CI_domias, CP_domias, defenseGrid1),
+            'ci': CI_domias,
+            'cp': CP_domias
+        }
 
         return defense_score
 
