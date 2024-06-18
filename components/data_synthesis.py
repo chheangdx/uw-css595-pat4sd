@@ -1,3 +1,8 @@
+##### PLACE LICENSES HERE #####
+
+import warnings
+warnings.filterwarnings("ignore")
+
 import pandas as pd
 import graphviz
 
@@ -33,7 +38,7 @@ def prep_bin_data(data, columns=[], bin_size=50):
     if(bin_size > 0):
         for col in columns:
             bins = pd.cut(data[col], bins=bin_size, labels=list(range(1,bin_size+1)))
-            new_data[col] = bins
+            new_data[col] = pd.to_numeric(bins)
     return new_data
 
 #DATA SYNTHESIS CLASS
@@ -105,42 +110,6 @@ class DataSynthesis():
             }
         else:
             return None
-    """ 
-        Method: run_data_analysis 
-        Desc: Analyzes synthetic data to its train data and test data
-        In: 
-            train_data: (dataframe) original data used for training
-            synth_data: (dataframe) synthetic data that was created from trained ML model
-            test_data: (dataframe) (optional) original data that wasnt used for training
-        Out: 0, analysis data is printed here.
-    """
-    def run_data_diagnosis(self, train_data, synth_data, test_data=None):
-        print("=== Quality Report ===")
-        quality_report = evaluate_quality(
-            real_data=train_data,
-            synthetic_data=synth_data,
-            metadata=self.metadata
-        )
-
-        print("=== Diagnostic Report ===")
-        diagnostic_report = run_diagnostic(
-            real_data=train_data,
-            synthetic_data=synth_data,
-            metadata=self.metadata
-        )
-
-        # TODO: Calculate Utility Scores
-
-        return
-    def run_column_diagnosis(self, train_data, synth_data, column):
-        fig = get_column_plot(
-            real_data=train_data,
-            synthetic_data=synth_data,
-            column_name=column,
-            metadata=self.metadata
-        )
-        fig.show()
-        return
     
     # ===============
     #
